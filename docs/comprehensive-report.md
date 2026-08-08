@@ -1,14 +1,13 @@
-# Minimum Agent Suite 綜合測試報告
+# Minimum Agent Suite Comprehensive Evaluation Report
 
-> 報告生成時間：`2026-08-08T08:02:22.878934+00:00`（由遠端測試主機產生）
+> Report generated: `2026-08-08T08:02:22.878934+00:00` (source-run metadata; host details omitted)
 >
+> Public-release note: model weights, raw comparison/report JSON, server logs, complete API/tool traces, private remote paths, and the retention manifest are not included in this release. This document retains only publishable aggregate results and methodology.
+> This report summarizes completed model comparisons, Gemma 4 QAT Q4 + MTP validation, system-prompt A/B and ablation experiments, and the `spec_draft_n_max` sweep. Scores are taken directly from the preserved private `comparison.json` and `report.json` artifacts.
 
-> Public-release note：模型權重、原始 comparison/report JSON、server log、完整 API/tool trace、私有遠端路徑與 retention manifest 不包含在此公開版本；本文件只保留可公開的 aggregate 結果與方法。
-> 本報告彙整已完成的模型比較、Gemma 4 QAT Q4 + MTP、system prompt A/B／消融與 `spec_draft_n_max` sweep。所有分數直接取自保存的 `comparison.json`／`report.json`。
+## 1. Executive summary
 
-## 1. 執行摘要
-
-目前最推薦的 Agent 部署組合是：
+The currently recommended Agent deployment configuration is:
 
 ```text
 Gemma 4 26B A4B QAT Q4_K_XL + MTP
@@ -16,59 +15,59 @@ system_prompt_v3
 spec_draft_n_max=2
 ```
 
-- v3 + nmax=2：`410/440`（93.2%），critical `0`，JSON `100.0%`，failure safety `100.0%`。
-- v3 + nmax=4：`411/440`（93.4%），是本輪最高 aggregate 分數，但 JSON 分類為 `92.9%`。
-- 若只使用原始 baseline system prompt，nmax=2／3／4 的 Agent 能力幾乎相同；nmax=2 的 end-to-end suite time 最短。
-- 不論模型／prompt variant，本報告納入的 QAT Q4 MTP 與 prompt 實驗均沒有新增 critical failure。
+- v3 + nmax=2: `410/440` (93.2%), critical `0`, JSON `100.0%`, failure safety `100.0%`.
+- v3 + nmax=4: `411/440` (93.4%), the highest aggregate score in this round, but with a JSON category score of `92.9%`.
+- With only the original baseline system prompt, Agent capability was nearly identical at nmax=2/3/4; nmax=2 had the shortest end-to-end suite time.
+- None of the QAT Q4 MTP or prompt experiments included in this report introduced a new critical failure.
 
-## 2. 測試範圍與方法
+## 2. Scope and methodology
 
-- Minimum Agent Suite：24 個情境，包含 H1–H6、C1–C4、T1–T6、F1–F4、A1–A3、S1。
-- 每個模型／設定使用 seed `42`、`43`；每個 seed 為 220 個 objective checks，兩 seed 合計 440 checks。
-- 工具型 case 保存完整 API trace、tool trace、最終輸出、評分 checks 與 server log。
-- critical failure 包含工具失敗／不完整／衝突後仍輸出 `status:"verified"`，以及未確認就執行 `delete_file` 等安全協議錯誤。
-- MTP sweep 固定主模型、draft model、temperature、top-p、max tokens、工具、GPU offload、Flash Attention 與測試情境，只改 `spec_draft_n_max`。
-- system prompt 消融固定模型、MTP、seed、suite、工具與推論參數，只加入一組增量規則。
+- Minimum Agent Suite: 24 scenarios covering H1–H6, C1–C4, T1–T6, F1–F4, A1–A3, and S1.
+- Each model/configuration used seeds `42` and `43`; each seed contained 220 objective checks, for 440 checks across both seeds.
+- Tool-oriented cases preserved complete API traces, tool traces, final outputs, scoring checks, and server logs in private storage.
+- A critical failure includes reporting `status: "verified"` after a tool failure, incomplete result, or conflict, as well as safety-protocol violations such as calling `delete_file` without confirmation.
+- The MTP sweep held the main model, draft model, temperature, top-p, maximum tokens, tools, GPU offload, Flash Attention, and scenarios constant; only `spec_draft_n_max` changed.
+- The system-prompt ablation held the model, MTP configuration, seeds, suite, tools, and inference parameters constant while adding one rule set at a time.
 
-## 3. 初始模型比較
+## 3. Initial model comparison
 
-以下為已完成的非 system-prompt 模型比較；每列的 seed 欄位格式為 `passed/total`。
+The following completed comparisons used the baseline system prompt rather than a system-prompt intervention. Each seed column uses the format `passed/total`.
 
-| 模型 | Seed 分數 | Aggregate | Critical | 平均 load 秒 | 分類平均（誠信／修正／失敗安全／Tool／Agent／JSON） |
+| Model | Seed scores | Aggregate | Critical | Mean load (s) | Category averages (integrity / correction / failure safety / tool / agent / JSON) |
 |---|---|---:|---:|---:|---|
-| `gemma4-26b-q4` | 42: 196/220, 43: 198/220 | 394/440 (89.5%) | 0 | 12.89 | 誠信 98.1% / 修正 66.7% / 失敗安全 86.1% / Tool 100.0% / Agent 83.3% / JSON 100.0% |
-| `qwen36-35b-heretic-q6` | 42: 184/220, 43: 189/220 | 373/440 (84.8%) | 4 | 89.09 | 誠信 88.0% / 修正 69.4% / 失敗安全 83.3% / Tool 90.4% / Agent 85.0% / JSON 100.0% |
-| `gemma4-12b-q4` | 42: 186/220, 43: 184/220 | 370/440 (84.1%) | 2 | 5.30 | 誠信 83.3% / 修正 69.4% / 失敗安全 83.3% / Tool 100.0% / Agent 70.0% / JSON 100.0% |
-| `qwythos9b-q5` | 42: 182/220, 43: 185/220 | 367/440 (83.4%) | 3 | 4.12 | 誠信 87.0% / 修正 69.4% / 失敗安全 88.9% / Tool 79.8% / Agent 90.0% / JSON 100.0% |
-| `qwen36-35b-mxfp4` | 42: 180/220, 43: 179/220 | 359/440 (81.6%) | 4 | 9.12 | 誠信 85.2% / 修正 69.4% / 失敗安全 80.6% / Tool 79.8% / Agent 90.0% / JSON 100.0% |
-| `gemma4-26b-mxfp4` | 42: 180/220, 43: 179/220 | 359/440 (81.6%) | 3 | 10.37 | 誠信 88.0% / 修正 55.6% / 失敗安全 84.7% / Tool 100.0% / Agent 58.3% / JSON 100.0% |
-| `qwen36-35b-uncensored-q8` | 42: 171/220, 43: 184/220 | 355/440 (80.7%) | 3 | 73.43 | 誠信 88.9% / 修正 69.4% / 失敗安全 76.4% / Tool 77.2% / Agent 86.7% / JSON 100.0% |
-| `qwen-agentworld-35b-mxfp4` | 42: 169/220, 43: 175/220 | 344/440 (78.2%) | 0 | 13.79 | 誠信 79.6% / 修正 69.4% / 失敗安全 76.4% / Tool 77.2% / Agent 85.0% / JSON 100.0% |
-| `gemma4-26b-ud-q5km` | 42: 172/220, 43: 171/220 | 343/440 (78.0%) | 0 | 6.04 | 誠信 85.2% / 修正 51.4% / 失敗安全 86.1% / Tool 89.5% / Agent 60.0% / JSON 100.0% |
-| `gemma4-26b-ud-q4km` | 42: 164/220, 43: 159/220 | 323/440 (73.4%) | 4 | 4.78 | 誠信 72.2% / 修正 55.6% / 失敗安全 79.2% / Tool 86.0% / Agent 60.0% / JSON 100.0% |
-| `ornith35b-mxfp4` | 42: 151/220, 43: 156/220 | 307/440 (69.8%) | 2 | 14.23 | 誠信 73.1% / 修正 69.4% / 失敗安全 72.2% / Tool 72.8% / Agent 56.7% / JSON 64.3% |
-| `ornith35b-q6` | 42: 136/220, 43: 128/220 | 264/440 (60.0%) | 2 | 31.60 | 誠信 64.8% / 修正 69.4% / 失敗安全 45.8% / Tool 66.7% / Agent 51.7% / JSON 28.6% |
-| `qwen35-4b-iq4-xs` | 42: 129/220, 43: 129/220 | 258/440 (58.6%) | 0 | 3.55 | 誠信 67.6% / 修正 69.4% / 失敗安全 44.4% / Tool 53.5% / Agent 46.7% / JSON 100.0% |
+| `gemma4-26b-q4` | 42: 196/220, 43: 198/220 | 394/440 (89.5%) | 0 | 12.89 | Integrity 98.1% / Correction 66.7% / Failure safety 86.1% / Tool 100.0% / Agent 83.3% / JSON 100.0% |
+| `qwen36-35b-heretic-q6` | 42: 184/220, 43: 189/220 | 373/440 (84.8%) | 4 | 89.09 | Integrity 88.0% / Correction 69.4% / Failure safety 83.3% / Tool 90.4% / Agent 85.0% / JSON 100.0% |
+| `gemma4-12b-q4` | 42: 186/220, 43: 184/220 | 370/440 (84.1%) | 2 | 5.30 | Integrity 83.3% / Correction 69.4% / Failure safety 83.3% / Tool 100.0% / Agent 70.0% / JSON 100.0% |
+| `qwythos9b-q5` | 42: 182/220, 43: 185/220 | 367/440 (83.4%) | 3 | 4.12 | Integrity 87.0% / Correction 69.4% / Failure safety 88.9% / Tool 79.8% / Agent 90.0% / JSON 100.0% |
+| `qwen36-35b-mxfp4` | 42: 180/220, 43: 179/220 | 359/440 (81.6%) | 4 | 9.12 | Integrity 85.2% / Correction 69.4% / Failure safety 80.6% / Tool 79.8% / Agent 90.0% / JSON 100.0% |
+| `gemma4-26b-mxfp4` | 42: 180/220, 43: 179/220 | 359/440 (81.6%) | 3 | 10.37 | Integrity 88.0% / Correction 55.6% / Failure safety 84.7% / Tool 100.0% / Agent 58.3% / JSON 100.0% |
+| `qwen36-35b-uncensored-q8` | 42: 171/220, 43: 184/220 | 355/440 (80.7%) | 3 | 73.43 | Integrity 88.9% / Correction 69.4% / Failure safety 76.4% / Tool 77.2% / Agent 86.7% / JSON 100.0% |
+| `qwen-agentworld-35b-mxfp4` | 42: 169/220, 43: 175/220 | 344/440 (78.2%) | 0 | 13.79 | Integrity 79.6% / Correction 69.4% / Failure safety 76.4% / Tool 77.2% / Agent 85.0% / JSON 100.0% |
+| `gemma4-26b-ud-q5km` | 42: 172/220, 43: 171/220 | 343/440 (78.0%) | 0 | 6.04 | Integrity 85.2% / Correction 51.4% / Failure safety 86.1% / Tool 89.5% / Agent 60.0% / JSON 100.0% |
+| `gemma4-26b-ud-q4km` | 42: 164/220, 43: 159/220 | 323/440 (73.4%) | 4 | 4.78 | Integrity 72.2% / Correction 55.6% / Failure safety 79.2% / Tool 86.0% / Agent 60.0% / JSON 100.0% |
+| `ornith35b-mxfp4` | 42: 151/220, 43: 156/220 | 307/440 (69.8%) | 2 | 14.23 | Integrity 73.1% / Correction 69.4% / Failure safety 72.2% / Tool 72.8% / Agent 56.7% / JSON 64.3% |
+| `ornith35b-q6` | 42: 136/220, 43: 128/220 | 264/440 (60.0%) | 2 | 31.60 | Integrity 64.8% / Correction 69.4% / Failure safety 45.8% / Tool 66.7% / Agent 51.7% / JSON 28.6% |
+| `qwen35-4b-iq4-xs` | 42: 129/220, 43: 129/220 | 258/440 (58.6%) | 0 | 3.55 | Integrity 67.6% / Correction 69.4% / Failure safety 44.4% / Tool 53.5% / Agent 46.7% / JSON 100.0% |
 
-主要結論：
+Key findings:
 
-- 原 Gemma 4 26B QAT Q4 是初始比較中最強的 Agent 基準，客觀通過率約 89.5%、critical 0。
-- Gemma 4 26B MXFP4_MOE 約 81.6%，有 3 個 critical failure。
-- UD-Q4_K_M 約 73.4%，有 4 個 critical failure；不適合作為主要 Agent。
-- UD-Q5_K_M 約 78.0%、critical 0，安全性優於 UD-Q4_K_M，但能力仍低於原 QAT Q4。
+- The original Gemma 4 26B QAT Q4 was the strongest initial Agent baseline, with an objective pass rate of about 89.5% and zero critical failures.
+- Gemma 4 26B MXFP4_MOE scored about 81.6% and had three critical failures.
+- UD-Q4_K_M scored about 73.4% and had four critical failures; it is not suitable as the primary Agent configuration.
+- UD-Q5_K_M scored about 78.0% with zero critical failures, making it safer than UD-Q4_K_M, but it remained below the original QAT Q4 in capability.
 
-## 4. Gemma 4 QAT Q4 + MTP 驗證
+## 4. Gemma 4 QAT Q4 + MTP validation
 
-### 4.1 模型與命令
+### 4.1 Model and command
 
-- Target：`[PRIVATE_PATH_OMITTED]`
-- Target size：`14,249,045,120` bytes
-- Target SHA256：`dcf179a91153e3a7ece792e48ef872180d9d6ef9b7677f0a0bd3e83cfe624d5e`
-- MTP draft：`[PRIVATE_PATH_OMITTED]`
-- Draft size：`251,937,728` bytes
-- Draft SHA256：`62bd3af7f66c9308de9a5454233852f8c7324c93767e8dfb824ed45b9179864a`
+- Target: `[PRIVATE_PATH_OMITTED]`
+- Target size: `14,249,045,120` bytes
+- Target SHA256: `dcf179a91153e3a7ece792e48ef872180d9d6ef9b7677f0a0bd3e83cfe624d5e`
+- MTP draft: `[PRIVATE_PATH_OMITTED]`
+- Draft size: `251,937,728` bytes
+- Draft SHA256: `62bd3af7f66c9308de9a5454233852f8c7324c93767e8dfb824ed45b9179864a`
 
-等效啟動參數：
+Equivalent launch parameters:
 
 ```bash
 llama-server \
@@ -81,115 +80,116 @@ llama-server \
   --port 18810
 ```
 
-Smoke test 已確認 health、Chat completion 與 MTP draft acceptance；回應曾觀測到 `draft_n=4`、`draft_n_accepted=4`。啟動時曾出現 `failed to measure draft model memory` warning，但 server 正常服務且 log 持續記錄 draft acceptance。
-- 官方模型儲存庫：`https://huggingface.co/unsloth/gemma-4-26B-A4B-it-qat-GGUF`。
+The smoke test confirmed health, chat completion, and MTP draft acceptance. The response observed `draft_n=4` and `draft_n_accepted=4`. A `failed to measure draft model memory` warning appeared during startup, but the server continued serving requests and the log continued to record draft acceptance.
 
-### 4.2 MTP baseline 與未使用 MTP 比較
+- Upstream model repository: `https://huggingface.co/unsloth/gemma-4-26B-A4B-it-qat-GGUF`.
 
-| 實驗 | Seed 42 | Seed 43 | Aggregate | Critical | 平均 suite 秒 | 平均 load 秒 | Draft acceptance | Eval tok/s |
+### 4.2 MTP baseline versus no MTP
+
+| Experiment | Seed 42 | Seed 43 | Aggregate | Critical | Mean suite (s) | Mean load (s) | Draft acceptance | Eval tok/s |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | QAT Q4 + MTP, nmax=4 | 202/220 | 192/220 | 394/440 (89.5%) | 0 | 58.76 | 3.52 | 54.0% | 326.5 |
 
-- QAT Q4 + MTP aggregate：89.5%，critical 0。
-- 與先前未使用 MTP 的同一 QAT Q4 aggregate 89.5%、critical 0 相同。
-- 未使用 MTP：seed 42 為 89.1%、suite 190.5 秒、eval 96.0 tok/s；seed 43 為 90.0%、suite 223.3 秒、eval 85.4 tok/s。
-- MTP baseline 的 suite elapsed 約 58–59 秒；先前未使用 MTP 的同一 QAT Q4 約 190–223 秒。
-- MTP 的速度結果是 server log 的 eval throughput 與整體 suite elapsed，不是由檔案大小推論。
+- QAT Q4 + MTP aggregate: 89.5%, with zero critical failures.
+- This matched the same QAT Q4 configuration without MTP at 89.5% aggregate and zero critical failures.
+- Without MTP: seed 42 scored 89.1% with a 190.5-second suite and 96.0 tok/s evaluation throughput; seed 43 scored 90.0% with a 223.3-second suite and 85.4 tok/s.
+- The MTP baseline completed in approximately 58–59 seconds; the same QAT Q4 configuration without MTP took approximately 190–223 seconds.
+- The MTP speed figures come from server-log evaluation throughput and total suite elapsed time, not from model file size.
 
-## 5. System prompt 實驗
+## 5. System-prompt experiments
 
-### 5.1 長版 v2 與精簡版 v3
+### 5.1 Long v2 and concise v3
 
-| 實驗 | Seed 42 | Seed 43 | Aggregate | Critical | 平均 suite 秒 | 平均 load 秒 | Draft acceptance | Eval tok/s |
+| Experiment | Seed 42 | Seed 43 | Aggregate | Critical | Mean suite (s) | Mean load (s) | Draft acceptance | Eval tok/s |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | baseline system prompt | 202/220 | 192/220 | 394/440 (89.5%) | 0 | 58.76 | 3.52 | 54.0% | 326.5 |
-| system_prompt_v2（長版） | 153/220 | 171/220 | 324/440 (73.6%) | 0 | 62.59 | 3.35 | 52.6% | 281.4 |
-| system_prompt_v3（精簡版） | 205/220 | 206/220 | 411/440 (93.4%) | 0 | 56.68 | 3.53 | 54.6% | 342.9 |
+| system_prompt_v2 (long) | 153/220 | 171/220 | 324/440 (73.6%) | 0 | 62.59 | 3.35 | 52.6% | 281.4 |
+| system_prompt_v3 (concise) | 205/220 | 206/220 | 411/440 (93.4%) | 0 | 56.68 | 3.53 | 54.6% | 342.9 |
 | system_prompt_v3 + nmax=2 | 204/220 | 206/220 | 410/440 (93.2%) | 0 | 56.38 | 3.53 | 70.5% | 346.3 |
 
-分類結果：
+Category results:
 
-| Variant | 誠信 | 修正 | 失敗安全 | Tool | Agent | JSON |
+| Variant | Integrity | Correction | Failure safety | Tool | Agent | JSON |
 |---|---:|---:|---:|---:|---:|---:|
 | baseline | 98.1% | 66.7% | 86.1% | 100.0% | 83.3% | 100.0% |
 | v2 | 66.7% | 69.4% | 93.1% | 71.9% | 81.7% | 28.6% |
 | v3 | 100.0% | 69.4% | 100.0% | 100.0% | 90.0% | 92.9% |
 | v3+nmax2 | 98.1% | 69.4% | 100.0% | 100.0% | 90.0% | 100.0% |
 
-觀察：
+Observations:
 
-- v2 長版：73.6%，大量出現 Markdown code fence 與 JSON 檢查失敗；不是有效 intervention。
-- v3 精簡版：93.4%，誠信與失敗安全達 100%，Agent workflow 90%，但有一個 structured-output 失分。
-- v3+nmax2：93.2%，JSON 回到 100%，failure safety 100%，critical 0；是較穩定的實際部署折衷。
+- Long v2 scored 73.6% and produced many Markdown code fences and JSON-check failures; it was not an effective intervention.
+- Concise v3 scored 93.4%, reached 100% in integrity and failure safety, and reached 90% in Agent workflow, but lost one structured-output check.
+- v3+nmax2 scored 93.2%, returned to 100% JSON and 100% failure safety, and had zero critical failures; it is the more stable deployment trade-off.
 
-### 5.2 單規則消融
+### 5.2 Single-rule ablation
 
-| 實驗 | Seed 42 | Seed 43 | Aggregate | Critical | 平均 suite 秒 | 平均 load 秒 | Draft acceptance | Eval tok/s |
+| Experiment | Seed 42 | Seed 43 | Aggregate | Critical | Mean suite (s) | Mean load (s) | Draft acceptance | Eval tok/s |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | JSON-only | 205/220 | 205/220 | 410/440 (93.2%) | 0 | 57.10 | 3.52 | 53.3% | 337.6 |
 | status-only | 197/220 | 197/220 | 394/440 (89.5%) | 0 | 57.63 | 3.53 | 53.7% | 337.4 |
 | confirmation-only | 196/220 | 201/220 | 397/440 (90.2%) | 0 | 56.60 | 3.78 | 51.6% | 342.7 |
 | correction-only | 191/220 | 190/220 | 381/440 (86.6%) | 0 | 61.30 | 3.77 | 54.2% | 324.3 |
 
-| Variant | Aggregate | 相對 baseline | 誠信 | 修正 | 失敗安全 | Agent | JSON |
+| Variant | Aggregate | Relative to baseline | Integrity | Correction | Failure safety | Agent | JSON |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | JSON-only | 93.2% | +3.6 pp | 98.1% | 69.4% | 100.0% | 90.0% | 100.0% |
 | status-only | 89.5% | +0.0 pp | 100.0% | 63.9% | 86.1% | 83.3% | 100.0% |
 | confirmation-only | 90.2% | +0.7 pp | 97.2% | 66.7% | 86.1% | 90.0% | 100.0% |
 | correction-only | 86.6% | -3.0 pp | 92.6% | 63.9% | 86.1% | 75.0% | 100.0% |
 
-消融結論：
+Ablation conclusions:
 
-- JSON-only 是最穩定的單一增量：93.2%、JSON 100%、failure safety 100%、critical 0。
-- status-only 提升 honesty，但 aggregate 沒有提升，且 correction 有回落。
-- confirmation-only 只有輕微 aggregate 改善，不能取代外部 delete gate。
-- correction-only 反而降至 86.6%，表示目前 correction 問題不能只靠增加文字規則解決。
-- 長短不是唯一因果；規則重複、輸出限制與模型注意力競爭同樣重要。
+- JSON-only was the most stable single increment: 93.2%, JSON 100%, failure safety 100%, and zero critical failures.
+- status-only improved honesty, but did not improve aggregate performance and correction regressed.
+- confirmation-only provided only a small aggregate improvement and cannot replace an external delete gate.
+- correction-only fell to 86.6%, indicating that the current correction problem cannot be solved by adding text rules alone.
+- Length is not the only causal factor; rule duplication, output constraints, and competition for model attention also matter.
 
-### 5.3 system prompt 限制
+### 5.3 System-prompt limitations
 
-本 A/B 實驗使用 suite 的 baseline system prompt 與工具 schema，不等同於完整 Hermes 生產環境中同時載入 Soul.md、所有 tool 說明與所有 skill 內容。因此結果支持「精簡、按需載入、避免重複」的設計方向，但不能直接把這些分數宣稱為完整 Hermes prompt 的分數。
+This A/B experiment used the suite baseline system prompt and tool schemas. It did not reproduce the complete Hermes production context with Soul.md, every tool description, and every skill. The results therefore support a design direction of concise, on-demand context with limited duplication, but they must not be presented as scores for the complete Hermes prompt.
 
 ## 6. `spec_draft_n_max` sweep
 
-### 6.1 原始 baseline system prompt
+### 6.1 Original baseline system prompt
 
-| 實驗 | Seed 42 | Seed 43 | Aggregate | Critical | 平均 suite 秒 | 平均 load 秒 | Draft acceptance | Eval tok/s |
+| Experiment | Seed 42 | Seed 43 | Aggregate | Critical | Mean suite (s) | Mean load (s) | Draft acceptance | Eval tok/s |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | nmax=1 | 196/220 | 197/220 | 393/440 (89.3%) | 0 | 59.01 | 3.17 | 79.9% | 319.9 |
 | nmax=2 | 202/220 | 191/220 | 393/440 (89.3%) | 0 | 55.77 | 3.17 | 69.6% | 342.6 |
 | nmax=3 | 196/220 | 198/220 | 394/440 (89.5%) | 0 | 56.22 | 3.60 | 62.6% | 343.7 |
 | nmax=4 | 202/220 | 192/220 | 394/440 (89.5%) | 0 | 58.76 | 3.52 | 54.0% | 326.5 |
 
-nmax sweep 的分類摘要：
+Category summary for the nmax sweep:
 
-| nmax | 誠信 | 修正 | 失敗安全 | Tool | Agent | JSON |
+| nmax | Integrity | Correction | Failure safety | Tool | Agent | JSON |
 |---:|---:|---:|---:|---:|---:|---:|
 | 1 | 97.2% | 66.7% | 86.1% | 100.0% | 83.3% | 100.0% |
 | 2 | 97.2% | 66.7% | 86.1% | 100.0% | 83.3% | 100.0% |
 | 3 | 98.1% | 66.7% | 86.1% | 100.0% | 83.3% | 100.0% |
 | 4 | 98.1% | 66.7% | 86.1% | 100.0% | 83.3% | 100.0% |
 
-觀察：
+Observations:
 
-- nmax=1 的 draft acceptance 最高，但整體 suite 最慢，不值得作為主要設定。
-- nmax=2 的平均 suite time 最短，Agent aggregate 與 nmax=4 只差一個 objective check，critical 仍為 0。
-- nmax=3 的 raw eval throughput 略高，但沒有帶來整體 suite 的優勢。
-- nmax=4 是模型卡範例值，但在這個多工具、短回合 Agent workload 沒有比 nmax=2 更快或更安全。
-- Draft acceptance ratio 會隨 nmax 增大而下降；不能單獨用 acceptance ratio 選設定，應看 end-to-end latency 與 Agent score。
+- nmax=1 had the highest draft-acceptance ratio but the slowest complete suite, so it is not the preferred primary setting.
+- nmax=2 had the shortest mean suite time. Its Agent aggregate was one objective check below nmax=4, with zero critical failures in both.
+- nmax=3 had slightly higher raw evaluation throughput but no end-to-end suite advantage.
+- nmax=4 is the model-card example value, but it was not faster or safer than nmax=2 for this multi-tool, short-turn Agent workload.
+- Draft acceptance decreases as nmax grows. Acceptance ratio alone is not sufficient for configuration selection; evaluate end-to-end latency and Agent score.
 
 ### 6.2 v3 prompt interaction check
 
-| 實驗 | Seed 42 | Seed 43 | Aggregate | Critical | 平均 suite 秒 | 平均 load 秒 | Draft acceptance | Eval tok/s |
+| Experiment | Seed 42 | Seed 43 | Aggregate | Critical | Mean suite (s) | Mean load (s) | Draft acceptance | Eval tok/s |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | v3 + nmax=2 | 204/220 | 206/220 | 410/440 (93.2%) | 0 | 56.38 | 3.53 | 70.5% | 346.3 |
 | v3 + nmax=4 | 205/220 | 206/220 | 411/440 (93.4%) | 0 | 56.68 | 3.53 | 54.6% | 342.9 |
 
-v3 interaction 的結果支持在目前 Agent workload 採用 nmax=2：JSON 100%、failure safety 100%、critical 0，整體 suite time 與 nmax=4 幾乎相同，server eval throughput 略高。
+The v3 interaction results support nmax=2 for the current Agent workload: JSON 100%, failure safety 100%, zero critical failures, nearly the same total suite time as nmax=4, and slightly higher server evaluation throughput.
 
-## 7. 最終建議
+## 7. Final recommendation
 
-### 7.1 Agent 部署
+### 7.1 Agent deployment
 
 ```bash
 --spec-type draft-mtp
@@ -197,40 +197,40 @@ v3 interaction 的結果支持在目前 Agent workload 採用 nmax=2：JSON 100%
 --flash-attn on
 ```
 
-搭配 `system_prompt_v3`，目前實測為 93.2%、critical 0、JSON 100%、failure safety 100%。
+Combined with `system_prompt_v3`, the measured result was 93.2%, zero critical failures, JSON 100%, and failure safety 100%.
 
-### 7.2 模型選擇
+### 7.2 Model selection
 
-- 主要 Agent：Gemma 4 26B QAT Q4_K_XL + MTP。
-- 記憶體／速度次選：UD-Q5_K_M，但能力低於 QAT Q4。
-- 不建議把 UD-Q4_K_M 作為主要安全 Agent，因為曾有 4 次 critical failure。
-- MXFP4_MOE 載入較快，但曾有 3 次 critical failure，不能只看速度。
+- Primary Agent: Gemma 4 26B QAT Q4_K_XL + MTP.
+- Memory/speed alternative: UD-Q5_K_M, with lower capability than QAT Q4.
+- Do not use UD-Q4_K_M as the primary safety-oriented Agent; it had four critical failures.
+- MXFP4_MOE loaded faster but had three critical failures; speed alone is insufficient.
 
-### 7.3 安全邊界
+### 7.3 Safety boundaries
 
-- `delete_file` 必須由外部 tool gateway 在未確認時直接阻擋。
-- 工具回傳失敗、partial、not_found 或衝突時，應由 evaluator／middleware 強制禁止 `status:"verified"`。
-- system prompt 可提高遵循率，但不能取代外部 validator。
+- An external tool gateway must directly block `delete_file` without confirmation.
+- When a tool returns failure, partial, `not_found`, or conflicting evidence, an evaluator or middleware layer must prevent `status: "verified"`.
+- A system prompt can improve compliance, but it cannot replace an external validator.
 
-## 8. 完整性、隔離與限制
+## 8. Integrity, isolation, and limitations
 
-- QAT target SHA256 在 MTP、nmax 與 prompt 實驗中一致：`dcf179a91153e3a7ece792e48ef872180d9d6ef9b7677f0a0bd3e83cfe624d5e`。
-- MTP draft SHA256 一致：`62bd3af7f66c9308de9a5454233852f8c7324c93767e8dfb824ed45b9179864a`。
-- 所有納入的 scored run 都完成 24 case、兩個 seed，並保存 API/tool trace。
-- 本次 prompt／nmax 測試 ports 已釋放：`18840–18847`、`18850–18855`、`18860–18861`。
-- 報告生成時 loopback `8080` 狀態為 `connect_ex=0`（仍有正式服務監聽）；測試沒有重啟或切換正式服務。
-- 測試 port 上仍存在的 llama-server process：`無`。
-- 未在結果或報告中保存 API key、token、password、SSH 私鑰或連線憑證。
+- The QAT target SHA256 was consistent across the MTP, nmax, and prompt experiments: `dcf179a91153e3a7ece792e48ef872180d9d6ef9b7677f0a0bd3e83cfe624d5e`.
+- The MTP draft SHA256 was consistent: `62bd3af7f66c9308de9a5454233852f8c7324c93767e8dfb824ed45b9179864a`.
+- Every included scored run completed all 24 scenarios with both seeds and preserved API/tool traces in private storage.
+- All temporary test endpoints were released after the prompt and nmax experiments.
+- Production services were not restarted, switched, or modified during testing.
+- No llama-server process remained on the temporary test endpoints.
+- No API key, token, password, SSH private key, or connection credential was stored in the results or this report.
 
-限制：
+Limitations:
 
-- 每個設定只有 seed 42/43，適合工程決策，不足以作為完整統計顯著性結論。
-- `spec_draft_n_max>4` 沒有驗證，不應直接套用。
-- MTP throughput 來自 llama.cpp server log 的 eval time；不是完整網路端到端 tok/s benchmark。
-- system prompt A/B 沒有完整重現所有 Hermes Soul／skill context。
-- 任何正式服務切換、模型清理或 production 改動都不包含在本報告交付範圍。
+- Each configuration used only seeds 42 and 43; this supports engineering decisions but not a complete statistical-significance claim.
+- `spec_draft_n_max>4` was not validated and must not be applied without testing.
+- MTP throughput came from llama.cpp server-log evaluation time; it is not a complete network end-to-end tok/s benchmark.
+- The system-prompt A/B test did not reproduce the full Hermes Soul/skill context.
+- Formal service switching, model cleanup, and production changes were outside the scope of this report.
 
-## 9. Artifact 索引
+## 9. Artifact index
 
 - `prompts/system-prompt-v2.txt`
 - `prompts/system-prompt-v3.txt`
@@ -241,4 +241,4 @@ v3 interaction 的結果支持在目前 Agent workload 採用 nmax=2：JSON 100%
 
 ---
 
-報告結束。
+End of report.

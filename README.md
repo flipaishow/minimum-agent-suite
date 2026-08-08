@@ -1,42 +1,46 @@
 # Minimum Agent Suite
 
-可重現、以工具與狀態協議為中心的 Minimum Agent Suite，用於比較本地 LLM 的 Agent 行為、工具使用、失敗安全、修正能力與嚴格 JSON 輸出。
+A reproducible local-LLM evaluation suite focused on agent behavior, tool use, failure safety, correction, and strict JSON output.
 
-> 這是經過公開發布清理的版本。模型權重、原始 server log、完整 API/tool trace、私有環境路徑與 credentials 不包含在 repository。
+> This is a sanitized public release. Model weights, raw server logs, full API/tool traces, private environment paths, and credentials are intentionally excluded from the repository.
 
-## 內容
+## Contents
 
-- `src/agent_eval_suite.py`：24 個情境與 objective evaluator
-- `src/model_eval_pilot.py`：loopback server、HTTP、GPU metrics 等共用 helper
-- `src/run_suite.py`：跨 seed 執行 wrapper；每次只在 `127.0.0.1` 啟動測試 server
-- `prompts/`：baseline intervention 與 system prompt 消融候選
-- `docs/comprehensive-report.md`：已清理的 aggregate 測試報告
+- `src/agent_eval_suite.py`: 24 scenarios and objective evaluators
+- `src/model_eval_pilot.py`: shared loopback-server, HTTP, and GPU-metrics helpers
+- `src/run_suite.py`: multi-seed runner; each run uses loopback only
+- `prompts/`: baseline system prompt and single-factor ablation candidates
+- `docs/comprehensive-report.md`: sanitized aggregate evaluation report
 
-## 測試範圍
+## Benchmark fixtures and language
 
-Suite 固定包含 24 個情境：
+The explanatory documentation in this repository is written in English. The benchmark fixture prompts and embedded scenario inputs remain in their original language so that the published experiment conditions and existing scores remain reproducible. Translating those fixtures would create a different benchmark and requires a separate evaluation run; the historical scores in the report must not be interpreted as results for a translated fixture set.
 
-- H1–H6：誠信／證據
-- C1–C4：錯誤修正
-- T1–T6：工具使用
-- F1–F4：失敗安全
-- A1–A3：Agent workflow
-- S1：嚴格 JSON 輸出
+## Evaluation scope
 
-每個設定預設使用 seed `42`、`43`；每個 seed 有 220 個 objective checks。
+The suite contains 24 fixed scenarios:
 
-## 需求
+- H1–H6: integrity and evidence
+- C1–C4: correction
+- T1–T6: tool use
+- F1–F4: failure safety
+- A1–A3: agent workflow
+- S1: strict JSON output
+
+Each configuration uses seeds `42` and `43` by default. Each seed contains 220 objective checks.
+
+## Requirements
 
 - Python 3.10+
-- 可執行的 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) `llama-server`
-- 使用者自行準備的 GGUF 主模型；MTP 另需 draft GGUF
-- GPU／CPU、Flash Attention 與 model-specific 依賴由使用者自行管理
+- An executable [`llama.cpp`](https://github.com/ggml-org/llama.cpp) `llama-server`
+- A GGUF main model supplied by the user; MTP also requires a draft GGUF
+- GPU/CPU, Flash Attention, and model-specific dependencies managed by the user
 
-本 repository 不下載、儲存或重新發布模型權重。
+This repository does not download, store, or redistribute model weights.
 
-## 快速開始
+## Quick start
 
-### 不使用 MTP
+### Without MTP
 
 ```bash
 python src/run_suite.py \
@@ -46,7 +50,7 @@ python src/run_suite.py \
   --output-root results/local-baseline
 ```
 
-### 使用 Gemma MTP
+### With Gemma MTP
 
 ```bash
 python src/run_suite.py \
@@ -60,7 +64,7 @@ python src/run_suite.py \
   --output-root results/local-gemma-mtp
 ```
 
-Windows Git Bash 範例：
+Windows Git Bash example:
 
 ```bash
 python src/run_suite.py \
@@ -74,39 +78,39 @@ python src/run_suite.py \
   --output-root results/windows-run
 ```
 
-`run_suite.py` 會為每個 seed 使用不同的 loopback port，將 JSON 結果寫入 `results/`；該資料夾被 `.gitignore` 排除，避免誤上傳 raw trace。
+`run_suite.py` uses a different loopback port for each seed and writes JSON output under `results/`. That directory is ignored by `.gitignore` to prevent accidental publication of raw traces.
 
-## 已測得的公開摘要
+## Published aggregate summary
 
-完整數字與限制請看 [`docs/comprehensive-report.md`](docs/comprehensive-report.md)。代表性結果：
+See [`docs/comprehensive-report.md`](docs/comprehensive-report.md) for the full sanitized report and limitations. Representative results:
 
-| 設定 | Aggregate | Critical | JSON | Failure safety |
+| Configuration | Aggregate | Critical | JSON | Failure safety |
 |---|---:|---:|---:|---:|
 | QAT Q4 + MTP baseline, nmax=4 | 89.5% | 0 | 100% | 86.1% |
 | system prompt v3 + nmax=4 | 93.4% | 0 | 92.9% | 100% |
 | system prompt v3 + nmax=2 | 93.2% | 0 | 100% | 100% |
 
-目前在工具型 Agent workload 的建議設定是 `system_prompt_v3 + spec_draft_n_max=2`；這不是對所有模型或長文本 workload 的普遍保證，請以自己的 model、llama.cpp 版本與硬體重跑。
+For the evaluated tool-oriented workload, the recommended setting is `system_prompt_v3 + spec_draft_n_max=2`. This is not a universal guarantee for every model or long-context workload; rerun the suite with your own model, llama.cpp version, and hardware.
 
-## 安全邊界
+## Safety boundaries
 
-- 測試 server 只綁定 `127.0.0.1`，不應直接改用 production bind address。
-- suite 中的 `delete_file` 是 sandbox evaluator 模擬，不會刪除使用者檔案。
-- 未確認前的 destructive action 應由實際 tool gateway 再次阻擋，不能只依賴 prompt。
-- 工具失敗、partial、not_found 或衝突資料不應被標記為 `status: "verified"`。
-- 不要把 API key、token、password、SSH private key、`.env`、raw logs 或模型檔案加入 commit。
+- The test server binds to `127.0.0.1` only; do not point it at a production bind address.
+- `delete_file` in the suite is a sandbox evaluator simulation and does not delete user files.
+- Real tool gateways must independently block destructive actions until confirmation; prompts are not an authorization boundary.
+- A tool failure, partial result, `not_found`, or conflicting evidence must not be reported as `status: "verified"`.
+- Do not commit API keys, tokens, passwords, SSH private keys, `.env` files, raw logs, or model files.
 
-## 結果與可重現性
+## Reproducibility and result handling
 
-每個 run 應保存：
+For each private run, preserve:
 
-- command 與 llama.cpp 版本
-- seed、model／draft hash、system prompt hash
-- load time、suite elapsed、eval throughput
-- 完整 JSON、tool trace 與 server log（留在 private storage）
+- the command and llama.cpp version
+- seed, model/draft hashes, and system-prompt hash
+- load time, suite elapsed time, and evaluation throughput
+- complete JSON, tool traces, and server logs
 
-公開報告只保留 aggregate 結果；原始 JSON 與 log 應放在不公開的儲存位置。
+The public report contains aggregate results only. Keep raw JSON and logs in private storage.
 
 ## License
 
-目前未附授權條款。公開 repository 不代表自動授予再發布或商業使用權；若要採用 MIT、Apache-2.0 或其他 license，請在發布前明確加入對應 `LICENSE` 檔案。
+This project is released under the [MIT License](LICENSE).
