@@ -6,15 +6,18 @@ A reproducible local-LLM evaluation suite focused on agent behavior, tool use, f
 
 ## Contents
 
-- `src/agent_eval_suite.py`: 24 scenarios and objective evaluators
+- `src/agent_eval_suite.py`: 24 Chinese-fixture scenarios and objective evaluators
+- `src/agent_eval_suite_en.py`: independent English-fixture suite variant
 - `src/model_eval_pilot.py`: shared loopback-server, HTTP, and GPU-metrics helpers
 - `src/run_suite.py`: multi-seed runner; each run uses loopback only
 - `prompts/`: baseline system prompt and single-factor ablation candidates
+- `prompts/en/system-prompt-v3.txt`: English system-prompt condition
 - `docs/comprehensive-report.md`: sanitized aggregate evaluation report
+- `docs/english-evaluation-summary.md`: English-versus-Chinese fixture comparison
 
 ## Benchmark fixtures and language
 
-The explanatory documentation in this repository is written in English. The benchmark fixture prompts and embedded scenario inputs remain in their original language so that the published experiment conditions and existing scores remain reproducible. Translating those fixtures would create a different benchmark and requires a separate evaluation run; the historical scores in the report must not be interpreted as results for a translated fixture set.
+The explanatory documentation in this repository is written in English. The original Chinese benchmark fixture and its historical results remain unchanged for reproducibility. An independent English-fixture variant is provided in `src/agent_eval_suite_en.py` and `prompts/en/`; it has its own measured results in [`docs/english-evaluation-summary.md`](docs/english-evaluation-summary.md). Do not mix the Chinese and English scores as if they were the same condition.
 
 ## Evaluation scope
 
@@ -89,8 +92,9 @@ See [`docs/comprehensive-report.md`](docs/comprehensive-report.md) for the full 
 | QAT Q4 + MTP baseline, nmax=4 | 89.5% | 0 | 100% | 86.1% |
 | system prompt v3 + nmax=4 | 93.4% | 0 | 92.9% | 100% |
 | system prompt v3 + nmax=2 | 93.2% | 0 | 100% | 100% |
+| English fixture, system prompt v3 + nmax=2 | 86.36% | 0 | 91.7% | 83.3% |
 
-For the evaluated tool-oriented workload, the recommended setting is `system_prompt_v3 + spec_draft_n_max=2`. This is not a universal guarantee for every model or long-context workload; rerun the suite with your own model, llama.cpp version, and hardware.
+The English row is a separate two-seed measurement; see the detailed comparison document for its scope and limitations. For the original evaluated tool-oriented workload, the recommended setting is `system_prompt_v3 + spec_draft_n_max=2`. This is not a universal guarantee for every model or long-context workload; rerun the suite with your own model, llama.cpp version, and hardware.
 
 ## Safety boundaries
 
