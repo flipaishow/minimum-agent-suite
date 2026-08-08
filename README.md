@@ -14,10 +14,11 @@ A reproducible local-LLM evaluation suite focused on agent behavior, tool use, f
 - `prompts/en/system-prompt-v3.txt`: English system-prompt condition
 - `docs/comprehensive-report.md`: sanitized aggregate evaluation report
 - `docs/english-evaluation-summary.md`: English-versus-Chinese fixture comparison
+- `docs/language-factor-analysis.md`: 2x2 system-prompt versus fixture-language analysis
 
 ## Benchmark fixtures and language
 
-The explanatory documentation in this repository is written in English. The original Chinese benchmark fixture and its historical results remain unchanged for reproducibility. An independent English-fixture variant is provided in `src/agent_eval_suite_en.py` and `prompts/en/`; it has its own measured results in [`docs/english-evaluation-summary.md`](docs/english-evaluation-summary.md). Do not mix the Chinese and English scores as if they were the same condition.
+The explanatory documentation in this repository is written in English. The original Chinese benchmark fixture and its historical results remain unchanged for reproducibility. An independent English-fixture variant is provided in `src/agent_eval_suite_en.py` and `prompts/en/`; it has its own measured results in [`docs/english-evaluation-summary.md`](docs/english-evaluation-summary.md). The follow-up 2x2 language-factor experiment is documented in [`docs/language-factor-analysis.md`](docs/language-factor-analysis.md). Do not mix the Chinese and English scores as if they were the same condition.
 
 ## Evaluation scope
 
