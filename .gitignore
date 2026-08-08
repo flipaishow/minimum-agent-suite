@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local evaluation outputs: raw JSON, traces, logs
+results/
+*.log
+runner_stdout.txt
+runner_stderr.txt
+
+# Model weights and local caches
+*.gguf
+*.ggml
+*.bin
+*.safetensors
+*.pt
+*.pth
+models/
+model-cache/
+
+# Local configuration and credentials
+.env
+.env.*
+*.pem
+*.key
+id_rsa
+id_ed25519
+id_ecdsa
+
+# Private legacy runner intentionally excluded from the public release
+src/agent_eval_runner.py
