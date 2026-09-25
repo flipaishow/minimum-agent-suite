@@ -15,6 +15,7 @@ A reproducible local-LLM evaluation suite focused on agent behavior, tool use, f
 - `docs/comprehensive-report.md`: sanitized aggregate evaluation report
 - `docs/english-evaluation-summary.md`: English-versus-Chinese fixture comparison
 - `docs/language-factor-analysis.md`: 2x2 system-prompt versus fixture-language analysis
+- `docs/evaluations/gpt6-luna-50-task-screen/`: public 50-prompt comparison appendix, first-pass scorecard, and aggregate gateway usage. This is a separate private-run directional screen, not part of the reproducible local-agent benchmark below.
 
 ## Benchmark fixtures and language
 

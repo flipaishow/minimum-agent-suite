@@ -1,0 +1,95 @@
+{
+  "method": "Independent first-pass scoring against each item's explicit gold checks. Automated rule-assisted checklist; not blind human adjudication. Exact totals are directional and sensitive to checklist interpretation.",
+  "score_scale": "Each matched check contributes equally; normalized to 10 points per item.",
+  "scores_out_of_500": {
+    "gpt-6-luna": 488.0,
+    "gpt-5.6-luna": 487.5
+  },
+  "paired_outcomes": {
+    "gpt-6-luna_wins": [
+      "I07",
+      "I13",
+      "I34"
+    ],
+    "gpt-5.6-luna_wins": [
+      "I29",
+      "I30",
+      "I37"
+    ],
+    "ties": [
+      "I01",
+      "I02",
+      "I03",
+      "I04",
+      "I05",
+      "I06",
+      "I08",
+      "I09",
+      "I10",
+      "I11",
+      "I12",
+      "I14",
+      "I15",
+      "I16",
+      "I17",
+      "I18",
+      "I19",
+      "I20",
+      "I21",
+      "I22",
+      "I23",
+      "I24",
+      "I25",
+      "I26",
+      "I27",
+      "I28",
+      "I31",
+      "I32",
+      "I33",
+      "I35",
+      "I36",
+      "I38",
+      "I39",
+      "I40",
+      "I41",
+      "I42",
+      "I43",
+      "I44",
+      "I45",
+      "I46",
+      "I47",
+      "I48",
+      "I49",
+      "I50"
+    ]
+  },
+  "important_observations": [
+    "Near-identical aggregate scores and 44 of 50 paired ties: no meaningful overall quality separation is established by this one 50-item authored set.",
+    "Both models followed the deterministic arithmetic, box-logic, JSON/CSV, and most constrained-format prompts accurately in this run.",
+    "I09 word-count limit: both outputs appear over the requested 180-230 words even with max effort and 2000 output-token cap; effort did not cure this instruction-following weakness.",
+    "I07: GPT-6 response more directly stated the evidence gap and marked the plan as not yet performed; GPT-5.6 gave a more expansive source plan but included an unsupported stronger statement that the summary cannot confirm the claims.",
+    "I13: GPT-6 chose None for empty input and preserved normal behavior; GPT-5.6 chose ValueError. Both stated an explicit contract and valid tests, so this is a contract choice rather than a correctness distinction.",
+    "I29/I30: GPT-5.6 more fully described uncertainty and decision context; one I30 response suggested sample-size calculations without showing a verified calculation, so treat numeric recommendation cautiously.",
+    "I37: both communicated known incident facts without asserting the absence of a breach; GPT-5.6 included a continuing-update commitment.",
+    "I49: both proposed measurable criteria and explicitly labeled the numbers as proposals, not existing service-level facts."
+  ],
+  "usage_observed": {
+    "gpt-6-luna": {
+      "requests": 50,
+      "sum_cost_usd": 0.018492,
+      "mean_latency_ms": 10492
+    },
+    "gpt-5.6-luna": {
+      "requests": 50,
+      "sum_cost_usd": 0.049535,
+      "mean_latency_ms": 13469
+    }
+  },
+  "limitations": [
+    "One generation per item; this is not a variance estimate or statistically powered benchmark.",
+    "Prompts were authored for this comparison and scoring was not blinded; subjective writing tasks and heuristic checks carry evaluator bias.",
+    "Cost and latency are one gateway run and may vary with load, cache and upstream routing.",
+    "The suite disables external tools; it evaluates response capability, not full tool-using agent performance.",
+    "The earlier low/default-effort run is not strictly comparable because reasoning effort and output-token budget differ."
+  ]
+}

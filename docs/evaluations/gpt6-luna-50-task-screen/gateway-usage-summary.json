@@ -1,0 +1,59 @@
+{
+  "run_id": "max2000-20260924-133728",
+  "task_count": 50,
+  "models": [
+    "gpt-6-luna",
+    "gpt-5.6-luna"
+  ],
+  "effort_requested_and_returned": "max for every request",
+  "temperature": 0,
+  "tools": false,
+  "output_cap_requested": 2000,
+  "paired_outcomes": {
+    "ties": 44,
+    "gpt6_wins": 3,
+    "gpt56_wins": 3
+  },
+  "heuristic_first_pass_scores": {
+    "gpt-6-luna": 488,
+    "gpt-5.6-luna": 487.5,
+    "max": 500
+  },
+  "gateway_usage_totals": {
+    "gpt-6-luna": {
+      "cost_usd": 0.018492,
+      "mean_client_elapsed_ms": 10492.18,
+      "input_tokens": 86385,
+      "output_tokens": 19707,
+      "reasoning_tokens": 13378
+    },
+    "gpt-5.6-luna": {
+      "cost_usd": 0.0495354,
+      "mean_client_elapsed_ms": 13468.74,
+      "input_tokens": 86385,
+      "output_tokens": 26882,
+      "reasoning_tokens": 19033
+    }
+  },
+  "important_anomaly": {
+    "item_id": "I34",
+    "gpt6_output_tokens": 6854,
+    "gpt6_reasoning_tokens": 6771,
+    "gpt56_output_tokens": 3704,
+    "gpt56_reasoning_tokens": 3624,
+    "cap_requested": 2000,
+    "response_status": "completed",
+    "interpretation": "inconsistent with simple cap reading; do not diagnose cause without route token definitions/provider accounting"
+  },
+  "limitations": [
+    "one generation per model/item",
+    "authored rather than sampled production prompts",
+    "heuristic checklist, not blind independent human scoring",
+    "no confidence interval or run variance",
+    "gateway-reported cost without billing reconciliation",
+    "no external tools or end-to-end agent workflows",
+    "output cap semantics unresolved on one item"
+  ],
+  "public_data_status": "No public reproducibility package or raw run data link is available. This is a directional internal comparison, not a reproducible public benchmark.",
+  "sensitive_fields_removed": true
+}
